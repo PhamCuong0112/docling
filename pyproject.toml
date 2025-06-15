@@ -99,6 +99,18 @@ rapidocr = [
   # 'onnxruntime (>=1.7.0,<2.0.0) ; python_version >= "3.10"',
   # 'onnxruntime (>=1.7.0,<1.20.0) ; python_version < "3.10"',
 ]
+app = [
+    "streamlit>=1.28.0",
+    "llama-cpp-python>=0.2.11",
+    "chromadb>=0.4.15",
+    "sentence-transformers>=2.2.2",
+    "pandas>=2.1.0",
+    "openpyxl>=3.1.2",
+    "python-dotenv>=1.0.0",
+    "tqdm>=4.66.1",
+    "plotly>=5.18.0",
+    "ollama>=0.1.5"
+]
 
 [dependency-groups]
 dev = [
@@ -138,21 +150,6 @@ examples = [
 constraints = [
   'onnxruntime (>=1.7.0,<2.0.0) ; python_version >= "3.10"',
   'onnxruntime (>=1.7.0,<1.20.0) ; python_version < "3.10"',
-]
-
-
-[project.optional-dependencies]
-app = [
-    "streamlit>=1.28.0",
-    "llama-cpp-python>=0.2.11",
-    "chromadb>=0.4.15",
-    "sentence-transformers>=2.2.2",
-    "pandas>=2.1.0",
-    "openpyxl>=3.1.2",
-    "python-dotenv>=1.0.0",
-    "tqdm>=4.66.1",
-    "plotly>=5.18.0",
-    "ollama>=0.1.5"
 ]
 
 [tool.setuptools.packages.find]
