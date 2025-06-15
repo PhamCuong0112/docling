@@ -95,17 +95,48 @@ class SentenceTransformerEmbedding(EmbeddingFunction):
         return next(self.model.parameters()).device
 
 # モデルの初期化
-@st.cache_resource
 def initialize_models():
+    converter = None
+    ollama_client = None
+    embedding_function = None
+    chroma_client = None
+    
+    # Docling初期化
     try:
         converter = DocumentConverter()
-        ollama_client = OllamaClient(OLLAMA_HOST, MODEL_NAME)
-        embedding_function = SentenceTransformerEmbedding()
-        chroma_client = chromadb.Client()
-        return converter, ollama_client, embedding_function, chroma_client
+        st.info("Docling初期化完了")
     except Exception as e:
-        st.error(f"モデルの初期化中にエラーが発生しました: {str(e)}")
+        st.error(f"Docling初期化中にエラーが発生しました: {str(e)}")
         return None, None, None, None
+    
+    # Ollama Client初期化
+    try:
+        ollama_client = OllamaClient(OLLAMA_HOST, MODEL_NAME)
+        # 接続テスト
+        next(ollama_client.generate("test", stream=False))
+        st.info("Ollama Client初期化完了")
+    except Exception as e:
+        st.error(f"Ollama Client初期化中にエラーが発生しました: {str(e)}")
+        return None, None, None, None
+    
+    # Embedding Model初期化
+    try:
+        embedding_function = SentenceTransformerEmbedding()
+        st.info("Embedding Model初期化完了")
+    except Exception as e:
+        st.error(f"Embedding Model初期化中にエラーが発生しました: {str(e)}")
+        return None, None, None, None
+    
+    # ChromaDB初期化
+    try:
+        os.makedirs("./chroma_db", exist_ok=True)
+        chroma_client = chromadb.PersistentClient(path="./chroma_db")
+        st.info("ChromaDB初期化完了")
+    except Exception as e:
+        st.error(f"ChromaDB初期化中にエラーが発生しました: {str(e)}")
+        return None, None, None, None
+        
+    return converter, ollama_client, embedding_function, chroma_client
 
 # メインアプリケーション
 def main():
@@ -122,13 +153,18 @@ def main():
             value=0.7,
             help="値が高いほど創造的な回答になります"
         )
-      # モデルの初期化
-    models = initialize_models()
-    if None in models:
-        st.error("モデルの初期化に失敗しました。環境変数や依存関係を確認してください。")
+    
+    # モデルの初期化
+    converter, ollama_client, embedding_function, chroma_client = initialize_models()
+    if None in (converter, ollama_client, embedding_function, chroma_client):
+        st.error("初期化に失敗したコンポーネントがあります。ログを確認してください。")
         return
-        
-    converter, ollama_client, embedding_function, chroma_client = models
+
+    st.success("すべてのコンポーネントの初期化が完了しました")
+
+    if not all([converter, ollama_client, embedding_function, chroma_client]):
+        st.error("一部のコンポーネントの初期化に失敗しました。環境変数や依存関係を確認してください。")
+        return
     
     # ファイルアップロード
     uploaded_file = st.file_uploader(
@@ -197,11 +233,20 @@ def main():
             
             # ドキュメント処理
             with st.spinner("ドキュメントを処理中..."):
+                # converterがNoneでないか確認
+                if converter is None:
+                    st.error("ドキュメント変換器（converter）が初期化されていません。環境変数や依存関係を確認してください。")
+                    return
                 # Doclingでの変換
                 result = converter.convert(file_path)
                   # ChromaDBコレクションの作成
                 collection_name = "excel_data_" + os.path.splitext(uploaded_file.name)[0]
                 try:
+                    # ChromaDBクライアントの確認
+                    if chroma_client is None:
+                        st.error("ChromaDBクライアントが初期化されていません")
+                        return
+
                     # 既存のコレクションがあれば削除
                     try:
                         chroma_client.delete_collection(name=collection_name)
@@ -219,11 +264,12 @@ def main():
                     
                     progress_bar = st.progress(0)
                     for i, chunk in enumerate(chunks):
-                        collection.add(
-                            documents=[chunk],
-                            ids=[f"chunk_{i}"]
-                        )
-                        progress_bar.progress((i + 1) / len(chunks))
+                        if chunk.strip():  # 空のチャンクをスキップ
+                            collection.add(
+                                documents=[chunk],
+                                ids=[f"chunk_{i}"]
+                            )
+                            progress_bar.progress((i + 1) / len(chunks))
                     
                     st.success("✅ ドキュメントの処理が完了しました！")
                     
@@ -246,6 +292,10 @@ def main():
                 
                 with st.chat_message("assistant"):
                     with st.spinner("回答を生成中..."):
+                        if ollama_client is None:
+                            st.error("Ollamaクライアントが初期化されていません")
+                            return
+
                         # 関連コンテキストの検索
                         results = collection.query(
                             query_texts=[prompt],
@@ -264,36 +314,29 @@ def main():
                         提供されたExcelデータの内容に基づいて、正確で具体的な回答を提供してください。
                         データに含まれていない情報については、その旨を明確に伝えてください。"""
                         
-                        full_prompt = f"""以下のコンテキストに基づいて質問に回答してください：
-
-{system_prompt}
+                        full_prompt = f"""{system_prompt}
 
 コンテキスト：
 {context}
 
 質問：{prompt}
 
-回答："""
+回答を日本語で提供してください。"""
+
+                        response_message = ""
+                        message_placeholder = st.empty()
                         
-                        # ストリーミング出力
-                        placeholder = st.empty()
-                        full_response = ""
                         try:
                             for response in ollama_client.generate(
-                                full_prompt,
+                                prompt=full_prompt,
+                                stream=True,
                                 temperature=TEMPERATURE
                             ):
                                 if "response" in response:
-                                    full_response += response["response"]
-                                    placeholder.markdown(full_response)
-                                
-                                if "done" in response and response["done"]:
-                                    break
+                                    response_message += response["response"]
+                                    message_placeholder.markdown(response_message + "▌")
                             
-                            st.session_state.messages.append({
-                                "role": "assistant",
-                                "content": full_response
-                            })
+                            message_placeholder.markdown(response_message)
                         except Exception as e:
                             st.error(f"回答の生成中にエラーが発生しました: {str(e)}")
             

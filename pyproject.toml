@@ -100,16 +100,22 @@ rapidocr = [
   # 'onnxruntime (>=1.7.0,<1.20.0) ; python_version < "3.10"',
 ]
 app = [
-    "streamlit>=1.28.0",
+    "streamlit>=1.31.0",
     "llama-cpp-python>=0.2.11",
-    "chromadb>=0.4.15",
+    "chromadb==0.4.22",
     "sentence-transformers>=2.2.2",
     "pandas>=2.1.0",
     "openpyxl>=3.1.2",
     "python-dotenv>=1.0.0",
     "tqdm>=4.66.1",
     "plotly>=5.18.0",
-    "ollama>=0.1.5"
+    "ollama>=0.1.5",
+    "torch>=2.2.0",
+    "typing-extensions>=4.9.0",
+    "pydantic>=2.6.0",
+    "numpy>=1.26.0",
+    "onnxruntime>=1.17.0",
+    "protobuf>=4.25.0"
 ]
 
 [dependency-groups]
