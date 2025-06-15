@@ -141,12 +141,8 @@ constraints = [
 ]
 
 
-[tool.uv]
-package = true
-default-groups = ["main"]
-
-[tool.uv.dependency-group.main]
-dependencies = [
+[project.optional-dependencies]
+main = [
     "docling",
     "streamlit>=1.28.0",
     "llama-cpp-python>=0.2.11",
