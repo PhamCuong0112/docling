@@ -1,11 +1,12 @@
-streamlit>=1.28.0
+streamlit==1.32.0
 docling
-ollama>=0.1.5
-chromadb>=0.4.15
-sentence-transformers>=2.2.2
-pandas>=2.1.0
-openpyxl>=3.1.2
-python-dotenv>=1.0.0
-tqdm>=4.66.1
---only-binary=numpy
-numpy>=1.26.0  # Latest numpy version compatible with Python 3.12
+ollama==0.1.27
+chromadb==0.4.22
+sentence-transformers==2.5.1
+pandas==2.2.1
+openpyxl==3.1.2
+python-dotenv==1.0.1
+tqdm==4.66.1
+numpy==1.26.4
+torch==2.2.1
+nest-asyncio==1.6.0  # イベントループの問題を解決するため

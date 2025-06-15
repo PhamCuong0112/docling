@@ -2,6 +2,9 @@ import os
 import streamlit as st
 import pandas as pd
 from docling.document_converter import DocumentConverter
+import nest_asyncio
+nest_asyncio.apply()  # イベントループの問題を解決
+
 import chromadb
 from chromadb.api.types import Documents, EmbeddingFunction, Embeddings
 import tempfile
@@ -18,17 +21,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-# PyTorchのイベントループ設定
-if torch.cuda.is_available():
-    torch.cuda.set_device(0)
+# PyTorchのデバイス設定
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
-# asyncioのイベントループ設定
-try:
-    loop = asyncio.get_event_loop()
-except RuntimeError:
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
 # 環境変数の読み込み
 load_dotenv()
 
