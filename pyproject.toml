@@ -142,8 +142,7 @@ constraints = [
 
 
 [project.optional-dependencies]
-main = [
-    "docling",
+app = [
     "streamlit>=1.28.0",
     "llama-cpp-python>=0.2.11",
     "chromadb>=0.4.15",
