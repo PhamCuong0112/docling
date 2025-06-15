@@ -7,3 +7,5 @@ pandas>=2.1.0
 openpyxl>=3.1.2
 python-dotenv>=1.0.0
 tqdm>=4.66.1
+--only-binary=numpy
+numpy>=1.26.0  # Latest numpy version compatible with Python 3.12
